@@ -73,7 +73,7 @@ end
 
 function Layout:init_layout()
   self.left_winid = vim.api.nvim_get_current_win()
-  vim.cmd "belowright vsp"
+  vim.cmd "belowright sp"
   self.right_winid = vim.api.nvim_get_current_win()
   self.file_panel:open()
 end
@@ -169,17 +169,20 @@ function Layout:recover_layout(state)
     self:init_layout()
   elseif not state.left_win then
     vim.api.nvim_set_current_win(self.right_winid)
-    vim.cmd "aboveleft vsp"
+    vim.cmd "aboveleft sp"
     self.left_winid = vim.api.nvim_get_current_win()
     self.file_panel:open()
     --self:set_file(self:cur_file(), "right")
   elseif not state.right_win then
     vim.api.nvim_set_current_win(self.left_winid)
-    vim.cmd "belowright vsp"
+    vim.cmd "belowright sp"
     self.right_winid = vim.api.nvim_get_current_win()
     self.file_panel:open()
     --self:set_file(self:cur_file(), "left")
   end
+  -- uncomment to make the top window smaller
+  -- vim.api.nvim_set_current_win(self.left_winid)
+  -- vim.cmd "resize -10"
 
   self.ready = true
 end
