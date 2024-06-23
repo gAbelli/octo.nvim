@@ -859,11 +859,8 @@ function M.create_pr(is_draft)
     for idx, remote in ipairs(remotes) do
       table.insert(remote_entries, idx .. ". " .. remote.repo)
     end
-    local remote_idx = vim.fn.inputlist(remote_entries)
-    if remote_idx < 1 then
-      utils.error "Aborting PR creation"
-      return
-    elseif remote_idx > #remotes then
+    local remote_idx = 1
+    if remote_idx > #remotes then
       utils.error "Invaild index."
       return
     end
@@ -913,39 +910,8 @@ function M.create_pr(is_draft)
   end
   local remote_branch = local_branch
   if not remote_branch_exists then
-    local choice =
-      vim.fn.confirm("Remote branch '" .. local_branch .. "' does not exist. Push local one?", "&Yes\n&No\n&Cancel", 2)
-    if choice == 1 then
-      local remote = "origin"
-      remote_branch = vim.fn.input {
-        prompt = "Enter remote branch name: ",
-        default = local_branch,
-        highlight = function(input)
-          return { { 0, #input, "String" } }
-        end,
-      }
-      utils.info(string.format("Pushing '%s' to '%s:%s' ...", local_branch, remote, remote_branch))
-      local ok, Job = pcall(require, "plenary.job")
-      if ok then
-        local job = Job:new {
-          command = "git",
-          args = { "push", remote, local_branch .. ":" .. remote_branch },
-          cwd = vim.fn.getcwd(),
-        }
-        job:sync()
-        --local stdout = table.concat(job:result(), "\n")
-        local stderr = table.concat(job:stderr_result(), "\n")
-        if not utils.is_blank(stderr) then
-          utils.error(stderr)
-        end
-      else
-        utils.error "Aborting PR creation"
-        return
-      end
-    else
-      utils.error "Aborting PR creation"
-      return
-    end
+    utils.error "Remote branch does not exist"
+    return
   end
 
   local templates = utils.get_repo_templates(repo)
@@ -973,12 +939,10 @@ function M.save_pr(opts)
   end
 
   -- title and body
-  local title, body
+  local title = M.getPrTitle(opts.remote_branch)
+  local body
   local last_commit = string.gsub(vim.fn.system "git log -1 --pretty=%B", "%s+$", "")
   local last_commit_lines = vim.split(last_commit, "\n")
-  if #last_commit_lines >= 1 then
-    title = last_commit_lines[1]
-  end
   if #last_commit_lines > 1 then
     if utils.is_blank(last_commit_lines[2]) and #last_commit_lines > 2 then
       body = table.concat(vim.list_slice(last_commit_lines, 3, #last_commit_lines), "\n")
@@ -992,35 +956,15 @@ function M.save_pr(opts)
     -- TODO: let the use edit the body
   end
 
-  -- title
-  title = vim.fn.input {
-    prompt = "Enter title: ",
-    default = title,
-    highlight = function(input)
-      return { { 0, #input, "String" } }
-    end,
-  }
-
   -- The name of the branch you want your changes pulled into. This should be an existing branch on the current repository.
   -- You cannot update the base branch on a pull request to point to another repository.
   -- get repo default branch
   local default_branch = opts.info.defaultBranchRef.name
-  local base_ref_name = vim.fn.input {
-    prompt = "Enter BASE branch: ",
-    default = default_branch,
-    highlight = function(input)
-      return { { 0, #input, "String" } }
-    end,
-  }
+  local base_ref_name = default_branch
+
   -- The name of the branch where your changes are implemented. For cross-repository pull requests in the same network,
   -- namespace head_ref_name with a user like this: username:branch.
-  local head_ref_name = vim.fn.input {
-    prompt = "Enter HEAD branch: ",
-    default = opts.remote_branch,
-    highlight = function(input)
-      return { { 0, #input, "String" } }
-    end,
-  }
+  local head_ref_name = opts.remote_branch
   if opts.info.isFork and opts.candidates[repo_idx] == opts.info.parent.nameWithOwner then
     head_ref_name = vim.g.octo_viewer .. ":" .. head_ref_name
   end
@@ -1057,6 +1001,22 @@ function M.save_pr(opts)
       end,
     }
   end
+end
+
+function M.getPrTitle(input)
+  local parts = {}
+  for part in input:gmatch "[^_]+" do
+    table.insert(parts, part)
+  end
+
+  if #parts < 2 then
+    return input
+  end
+
+  parts[1] = "[" .. parts[1] .. "]"
+  parts[2] = parts[2]:gsub("^%l", string.upper)
+
+  return table.concat(parts, " ")
 end
 
 function M.pr_ready_for_review()
