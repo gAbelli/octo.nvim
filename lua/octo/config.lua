@@ -215,6 +215,10 @@ function M.get_default_values()
         react_laugh = { lhs = "<space>rl", desc = "add/remove 😄 reaction" },
         react_confused = { lhs = "<space>rc", desc = "add/remove 😕 reaction" },
         review_start = { lhs = "<space>vs", desc = "start a review for the current PR" },
+        review_fake_start = {
+          lhs = "<space>vf",
+          desc = "start a fake review for the current PR, just to see the diff view",
+        },
         review_resume = { lhs = "<space>vr", desc = "resume a pending review for the current PR" },
       },
       review_thread = {

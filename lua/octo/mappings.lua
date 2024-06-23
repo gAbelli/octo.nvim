@@ -114,6 +114,9 @@ return {
   review_start = function()
     reviews.start_review()
   end,
+  review_fake_start = function()
+    reviews.start_fake_review()
+  end,
   review_resume = function()
     reviews.resume_review()
   end,

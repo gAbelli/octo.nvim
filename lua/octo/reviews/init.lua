@@ -57,6 +57,12 @@ function Review:start()
   end)
 end
 
+-- Starts a new fake review, just to see the diff view
+function Review:fake_start()
+  self:update_threads {}
+  self:initiate()
+end
+
 -- Retrieves existing review
 function Review:retrieve(callback)
   local query =
@@ -504,6 +510,25 @@ function M.start_review()
     pull_request = utils.get_pull_request_for_current_branch(function(pr)
       local current_review = Review:new(pr)
       current_review:start()
+    end)
+  end
+end
+
+function M.start_fake_review()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local buffer = octo_buffers[bufnr]
+  if not buffer then
+    utils.error "No Octo buffer found"
+    return
+  end
+  local pull_request = buffer:get_pr()
+  if pull_request then
+    local current_review = Review:new(pull_request)
+    current_review:fake_start()
+  else
+    pull_request = utils.get_pull_request_for_current_branch(function(pr)
+      local current_review = Review:new(pr)
+      current_review:fake_start()
     end)
   end
 end

@@ -192,6 +192,9 @@ function M.setup()
       start = function()
         reviews.start_review()
       end,
+      fake_start = function()
+        reviews.start_fake_review()
+      end,
       resume = function()
         reviews.resume_review()
       end,
